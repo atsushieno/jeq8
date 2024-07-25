@@ -1,0 +1,18 @@
+{
+  "name": "jeq8-ui",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "weq8": "^0.2.2"
+  },
+  "devDependencies": {
+    "vite": "^5.3.4",
+    "vite-plugin-zip-pack": "^1.2.3"
+  }
+}

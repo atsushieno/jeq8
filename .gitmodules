@@ -1,0 +1,6 @@
+[submodule "external/JUCE"]
+	path = external/JUCE
+	url = https://github.com/juce-framework/JUCE.git
+[submodule "external/weq8"]
+	path = external/weq8
+	url = https://github.com/teropa/weq8.git
