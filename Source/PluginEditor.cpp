@@ -1,6 +1,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "BinaryData.h"
+#include "Parameters.h"
 
 std::string getMimeType(const juce::String& name) {
     if (name.endsWith(".html"))
@@ -22,7 +23,7 @@ const char* getZip(int& size) {
     return nullptr;
 }
 
-std::optional<juce::WebBrowserComponent::Resource> getResource(juce::ZipFile* zip, const juce::String& name) {
+std::optional<juce::WebBrowserComponent::Resource> getZippedResource(juce::ZipFile* zip, const juce::String& name) {
     for (int i = 0, n = zip->getNumEntries(); i < n; i++) {
         auto entry = zip->getEntry(i);
         auto fn = entry->filename;
@@ -37,15 +38,31 @@ std::optional<juce::WebBrowserComponent::Resource> getResource(juce::ZipFile* zi
     return std::nullopt;
 }
 
-NewPluginTemplateAudioProcessorEditor::NewPluginTemplateAudioProcessorEditor(
-    NewPluginTemplateAudioProcessor& p)
+JEQ8AudioProcessorEditor::JEQ8AudioProcessorEditor(
+    JEQ8AudioProcessor& p)
     : AudioProcessorEditor(&p),
+      webviewAudioDataURL(/*juce::WebBrowserComponent::getResourceProviderRoot()*/ + "/__audio__"),
       webview(juce::WebBrowserComponent{ juce::WebBrowserComponent::Options{}
         .withBackend (juce::WebBrowserComponent::Options::Backend::webview2)
         .withWinWebView2Options (juce::WebBrowserComponent::Options::WinWebView2{})
         .withNativeIntegrationEnabled()
+        .withUserScript("")
         .withResourceProvider (
-            [this] (const auto& url) { return getResource (ui_zip.get(), url); },
+            [this] (const auto& url) {
+                if (url == webviewAudioDataURL) {
+                    auto view = dynamic_cast<JEQ8AudioProcessor*>(&processor)->inputs.getView();
+                    auto numBytes = view.size.numChannels * view.size.numFrames * sizeof(float);
+                    if (audio_web_resource.data.size() < numBytes)
+                        audio_web_resource.data.resize(numBytes);
+                    // copy all channels
+                    for (int i = 0, n = view.size.numChannels; i < n; i++) {
+                        auto data = view.data.channels[i];
+                        memcpy(reinterpret_cast<void *>(audio_web_resource.data.data() + i * numBytes), data, numBytes);
+                    }
+                    return std::optional(audio_web_resource);
+                }
+                return getZippedResource (ui_zip.get(), url);
+            },
             // FIXME: give appropriate URL
             juce::URL { "http://localhost:8080" }.getOrigin())
       })
@@ -59,19 +76,44 @@ NewPluginTemplateAudioProcessorEditor::NewPluginTemplateAudioProcessorEditor(
     setSize(800, 300);
     std::cerr << juce::WebBrowserComponent::getResourceProviderRoot() << std::endl;
     webview.goToURL(juce::WebBrowserComponent::getResourceProviderRoot() + "index.html");
+
+    p.processBlockInvocationListener = [&](JEQ8AudioProcessor* p) {
+        // FIXME: implement audio buffer updating or copying
+    };
 }
 
-NewPluginTemplateAudioProcessorEditor::~NewPluginTemplateAudioProcessorEditor() {
+JEQ8AudioProcessorEditor::~JEQ8AudioProcessorEditor() {
     ui_zip_stream.reset();
     ui_zip.reset();
 }
 
-void NewPluginTemplateAudioProcessorEditor::paint(juce::Graphics& g)
+void JEQ8AudioProcessorEditor::paint(juce::Graphics& g)
 {
     g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
 }
 
-void NewPluginTemplateAudioProcessorEditor::resized()
+void JEQ8AudioProcessorEditor::resized()
 {
     webview.setBounds(getLocalBounds());
+}
+
+void JEQ8AudioProcessorEditor::notifyParameterChangesToWebUI(int32_t index, float newValue) {
+    int32_t nodeId = index / 5;
+    switch (index % 5) {
+    case JEQ8_PARAMETER_TOGGLE:
+        webview.evaluateJavascript(juce::String::formatted("weq8.toggleBypass(%d, %d)", nodeId, newValue != 0));
+        break;
+    case JEQ8_PARAMETER_TYPE:
+        webview.evaluateJavascript(juce::String::formatted("weq8.setFilterType(%d, %s)", nodeId, EQTypeNames[(int32_t) newValue].toRawUTF8()));
+        break;
+    case JEQ8_PARAMETER_Q:
+        webview.evaluateJavascript(juce::String::formatted("weq8.setFilterQ(%d, %d)", nodeId, newValue));
+        break;
+    case JEQ8_PARAMETER_GAIN:
+        webview.evaluateJavascript(juce::String::formatted("weq8.setFilterGain(%d, %d)", nodeId, newValue));
+        break;
+    case JEQ8_PARAMETER_FREQUENCY:
+        webview.evaluateJavascript(juce::String::formatted("weq8.setFilterFrequency(%d, %d)", nodeId, newValue));
+        break;
+    }
 }

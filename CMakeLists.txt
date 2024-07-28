@@ -47,6 +47,10 @@ target_compile_definitions(${BaseTargetName}
         JUCE_USE_WIN_WEBVIEW2_WITH_STATIC_LINKING=1
 )
 
+target_include_directories(${BaseTargetName} PRIVATE
+        external/choc
+)
+
 target_link_libraries(${BaseTargetName} PRIVATE
         juce_recommended_config_flags
         juce_recommended_lto_flags

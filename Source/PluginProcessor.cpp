@@ -1,45 +1,66 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-NewPluginTemplateAudioProcessor::NewPluginTemplateAudioProcessor()
+JEQ8AudioProcessor::JEQ8AudioProcessor()
 {
-    parameters.add(*this);
+    parameters.add(this);
+}
+
+void JEQ8AudioProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) {
+    ProcessorBase::prepareToPlay(sampleRate, maximumExpectedSamplesPerBlock);
+    auto size = choc::buffer::Size::create(getNumInputChannels(), getBlockSize());
+    inputs = choc::buffer::ChannelArrayBuffer<float>(size);
 }
 
 template<typename T>
-void NewPluginTemplateAudioProcessor::processBlock(juce::AudioBuffer<T>& buffer,
+void JEQ8AudioProcessor::processBlock(juce::AudioBuffer<T>& buffer,
                                                    juce::MidiBuffer& midiMessages) {
     juce::ignoreUnused(midiMessages);
 
+    // FIXME: implement DSP
+
+    if (typeid(T) ==typeid(double)) {
+        assert("Not implemented");
+    } else {
+        for (int32_t ch = 0, nCh = getNumInputChannels(); ch < nCh; ++ch) {
+            memcpy(inputs.getChannel(ch).data.data, buffer.getReadPointer(ch), buffer.getNumSamples() * sizeof(T));
+        }
+    }
+    if (processBlockInvocationListener != nullptr) {
+        processBlockInvocationListener(this);
+    }
+
+    /*
     if (parameters.enable->get())
         buffer.applyGain(parameters.gain->get());
     else
         buffer.clear();
+    */
 }
 
-void NewPluginTemplateAudioProcessor::releaseResources() {
+void JEQ8AudioProcessor::releaseResources() {
 }
 
-bool NewPluginTemplateAudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const {
+bool JEQ8AudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const {
     return AudioProcessor::isBusesLayoutSupported(layouts);
 }
 
-void NewPluginTemplateAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
+void JEQ8AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                                                    juce::MidiBuffer& midiMessages) {
     processBlock<float>(buffer, midiMessages);
 }
 
-void NewPluginTemplateAudioProcessor::processBlock(juce::AudioBuffer<double>& buffer,
+void JEQ8AudioProcessor::processBlock(juce::AudioBuffer<double>& buffer,
                                                    juce::MidiBuffer& midiMessages) {
     processBlock<double>(buffer, midiMessages);
 }
 
-juce::AudioProcessorEditor* NewPluginTemplateAudioProcessor::createEditor()
+juce::AudioProcessorEditor* JEQ8AudioProcessor::createEditor()
 {
-    return new NewPluginTemplateAudioProcessorEditor(*this);
+    return new JEQ8AudioProcessorEditor(*this);
 }
 
-void NewPluginTemplateAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
+void JEQ8AudioProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
     //Serializes your parameters, and any other potential data into an XML:
 
@@ -60,7 +81,7 @@ void NewPluginTemplateAudioProcessor::getStateInformation(juce::MemoryBlock& des
     copyXmlToBinary(*pluginPreset.createXml(), destData);
 }
 
-void NewPluginTemplateAudioProcessor::setStateInformation(const void* data,
+void JEQ8AudioProcessor::setStateInformation(const void* data,
                                                           int sizeInBytes)
 {
     //Loads your parameters, and any other potential data from an XML:
@@ -87,5 +108,5 @@ void NewPluginTemplateAudioProcessor::setStateInformation(const void* data,
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
-    return new NewPluginTemplateAudioProcessor();
+    return new JEQ8AudioProcessor();
 }
