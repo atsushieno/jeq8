@@ -20,7 +20,7 @@ void JEQ8AudioProcessor::processBlock(juce::AudioBuffer<T>& buffer,
     // FIXME: implement DSP
 
     if (typeid(T) ==typeid(double)) {
-        assert("Not implemented");
+        // Not supported yet
     } else {
         for (int32_t ch = 0, nCh = getNumInputChannels(); ch < nCh; ++ch) {
             memcpy(inputs.getChannel(ch).data.data, buffer.getReadPointer(ch), buffer.getNumSamples() * sizeof(T));
