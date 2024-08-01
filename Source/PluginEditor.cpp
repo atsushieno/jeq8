@@ -50,14 +50,17 @@ JEQ8AudioProcessorEditor::JEQ8AudioProcessorEditor(
         .withResourceProvider (
             [this] (const auto& url) {
                 if (url == webviewAudioDataURL) {
-                    auto view = dynamic_cast<JEQ8AudioProcessor*>(&processor)->inputs.getView();
-                    auto numBytes = view.size.numChannels * view.size.numFrames * sizeof(float);
+                    auto jeq8 = dynamic_cast<JEQ8AudioProcessor*>(&processor);
+                    assert(jeq8 != nullptr);
+                    auto view = jeq8->inputs.getView();
+                    auto numBytesPerChannel = view.size.numFrames * sizeof(float);
+                    auto numBytes = view.size.numChannels * numBytesPerChannel;
                     if (audio_web_resource.data.size() < numBytes)
                         audio_web_resource.data.resize(numBytes);
                     // copy all channels
                     for (int i = 0, n = view.size.numChannels; i < n; i++) {
                         auto data = view.data.channels[i];
-                        memcpy(reinterpret_cast<void *>(audio_web_resource.data.data() + i * numBytes), data, numBytes);
+                        memcpy(reinterpret_cast<void *>(audio_web_resource.data.data() + i * numBytesPerChannel), data, numBytesPerChannel);
                     }
                     return std::optional(audio_web_resource);
                 }
