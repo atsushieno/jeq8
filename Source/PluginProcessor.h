@@ -16,8 +16,6 @@ public:
     void processBlock(juce::AudioBuffer<double>& buffer, juce::MidiBuffer& midiMessages) override;
     void releaseResources() override;
 
-    bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
-
     using AudioProcessor::processBlock;
 
     void getStateInformation(juce::MemoryBlock& destData) override;

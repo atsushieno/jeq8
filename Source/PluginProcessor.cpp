@@ -41,10 +41,6 @@ void JEQ8AudioProcessor::processBlock(juce::AudioBuffer<T>& buffer,
 void JEQ8AudioProcessor::releaseResources() {
 }
 
-bool JEQ8AudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const {
-    return AudioProcessor::isBusesLayoutSupported(layouts);
-}
-
 void JEQ8AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                                                    juce::MidiBuffer& midiMessages) {
     processBlock<float>(buffer, midiMessages);

@@ -9,8 +9,8 @@ add_subdirectory(external/JUCE)
 file(GLOB_RECURSE WebResources Relative "${CMAKE_CURRENT_LIST_DIR}/Source/web/dist-zip"
         "Source/web/dist-zip/*.zip"
 )
-if (${WebResources} STREQUAL '')
-    message("Web resource is not found. Run `npm run build` under `Source/web` first.")
+if ("${WebResources}" STREQUAL "")
+    message("Web resource is not found. Run `npm install; npm run build` under `Source/web` first.")
 endif()
 
 juce_add_binary_data(${BaseTargetName}_BinaryData
